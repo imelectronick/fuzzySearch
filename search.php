@@ -1,30 +1,45 @@
 #!/usr/bin/php
 <?php
 
-$lib = file(__DIR__.'/lib.csv', FILE_IGNORE_NEW_LINES);
+/**
+ * Config block
+ */
+$ngramLength = 3;
+$libraryFile = __DIR__.'/lib.csv';
 
+/**
+ * Check input parameters
+ */
 if ($argc < 2 || empty($argv[1])) {
     echo "Wrong argument. Syntax: search.php searching_word\n";
     exit;
 }
+
+require_once __DIR__.'/lib.php';
+
+// Import library from file
+$lib = file($libraryFile, FILE_IGNORE_NEW_LINES);
+
+// Init enging
+$engine = new ngram($ngramLength);
+
+echo "Loading library with ". count($lib). " words.\n";
+// Set library
+$engine->setLibrary($lib);
+
+echo "Building N-gram index.\n";
+// Build index
+$engine->build();
+
 // Get needle word from command-line arguments
 $needle = $argv[1];
 
-echo "Looking for {$needle} in ".count($lib), " library.";
-$distances = [];
-
-// Calculate distances
-foreach ($lib as $key => $word) {
-    // ignore the fact function not fully support multibyte strings
-    $distances[$key] = levenshtein($needle, $word);
-}
-
-asort($distances);
+echo "Searching for {$needle}...\n";
+// Perform search
+$distances = $engine->search($needle);
 
 echo "Results:\n";
-// Show 3 closest words with it's distances
-$i = 0;
-foreach($distances as $key => $distance) {
-    echo "{$lib[$key]} [{$distance}]\n";
-    ++$i >= 3 && exit;
+// Show matched words with theirs Levenshtein distance
+foreach($distances as $word => $distance) {
+    echo "{$word} [{$distance}]\n";
 }
