@@ -27,7 +27,7 @@ class ngram
     /**
      * Build N-gram index based on library
      */
-    public function build()
+    public function buildIndex()
     {
         foreach ($this->library as $key => $word) {
             $ngrams = $this->buildNgrams($word, $key);
@@ -38,28 +38,31 @@ class ngram
     /**
      * Search used combined N-gram/Levenshtein algorithm
      *
-     * @param $word
+     * @param $needle
      * @return array
      */
-    public function search($word)
+    public function search($needle)
     {
         // Search using ngram index
-        $ngrams = $this->buildNgrams($word, -1);
+        $ngrams = $this->buildNgrams($needle, -1);
         $result = [];
         foreach ($ngrams as $ngram => $null) {
-            foreach($this->index[$ngram] as $key) {
-                $result[$key]++;
+            if (!empty($this->index[$ngram])) {
+                foreach ($this->index[$ngram] as $key) {
+                    $word = $this->library[$key];
+                    $result[$word]++;
+                }
             }
         }
         // Short variant will end here
-        // arsort($result);
-        // return $result;
+        //arsort($result);
+        //return $result;
 
         // Add more accuracy using Levenshtein algorithm
+        // TODO: filter some words based on amount of found N-grams (e.g. max/2)
         $distances = [];
-        foreach($result as $key => $null) {
-            $distances[$this->library[$key]] = levenshtein($word, $this->library[$key]);
-            // Also we can limit this re-search only on most-accurate words based on n-gram search
+        foreach($result as $word => $null) {
+            $distances[$word] = levenshtein($needle, $word);
         }
 
         asort($distances);
